@@ -19,6 +19,7 @@ export const setupTestContracts = async (
   testBeneficiary1: User;
   testBeneficiary2: User;
   testUser1: User;
+  testExploiter: User;
 }> => {
   const deployedDynamicVaults = await deployer.DynamicVaultsF.deploy();
 
@@ -40,6 +41,10 @@ export const setupTestContracts = async (
   });
 
   const testUser1 = await setupUser(users[5].address, {
+    DynamicVaults: deployedDynamicVaults,
+  });
+
+  const testExploiter = await setupUser(users[6].address, {
     DynamicVaults: deployedDynamicVaults,
   });
 
@@ -71,5 +76,6 @@ export const setupTestContracts = async (
     testBeneficiary1,
     testBeneficiary2,
     testUser1,
+    testExploiter,
   };
 };

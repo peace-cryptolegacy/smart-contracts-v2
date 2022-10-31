@@ -55,16 +55,18 @@ contract DynamicVaults is IDynamicVaults {
   }
 
   modifier onlyBackup(Types.DynamicVault storage dynamicVault) {
+    bool authorized;
     for (uint256 i = 0; i < dynamicVault.backupAddresses.length; i++) {
-      bool authorized;
       if (dynamicVault.backupAddresses[i] == msg.sender) {
         authorized = true;
+        break;
       }
+    }
+
       if (!authorized) {
         revert Errors.T_UNAUTHORIZED();
       }
       _;
-    }
   }
 
   /**
@@ -228,20 +230,16 @@ contract DynamicVaults is IDynamicVaults {
   /**
    * @notice Transfers the protected tokens to the backup address
    * @param dynamicVaultId The id of thedynamicVault
-   * @param backupAddress The authorized address to which the protected tokens will be transfered
    */
-  function repossessAccount(uint256 dynamicVaultId, address backupAddress)
-    external
-    onlyBackup(dynamicVaults[dynamicVaultId])
-  {
+  function repossessAccount(uint256 dynamicVaultId) external onlyBackup(dynamicVaults[dynamicVaultId]) {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
       IERC20 token = IERC20(dynamicVault.testament.tokens[i]);
       uint256 allowedBalance = token.allowance(dynamicVault.testament.creationParameters.owner, address(this));
-      token.safeTransferFrom(dynamicVault.testament.creationParameters.owner, backupAddress, allowedBalance);
+      token.safeTransferFrom(dynamicVault.testament.creationParameters.owner, msg.sender, allowedBalance);
     }
 
-    emit accountRepossessed(dynamicVaultId, backupAddress);
+    emit accountRepossessed(dynamicVaultId, msg.sender);
   }
 
   /**
@@ -276,7 +274,10 @@ contract DynamicVaults is IDynamicVaults {
    * @param dynamicVaultId The id of thedynamicVault
    * @param backupAddress The address to remove
    */
-  function removeBackup(uint256 dynamicVaultId, address backupAddress) external {
+  function removeBackup(uint256 dynamicVaultId, address backupAddress)
+    external
+    onlyOwner(dynamicVaults[dynamicVaultId])
+  {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
     for (uint256 i = 0; i < dynamicVault.backupAddresses.length; i++) {

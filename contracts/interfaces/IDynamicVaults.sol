@@ -86,10 +86,10 @@ otherwise would be expensive and unnecessary
 
   /**
    * @notice Transfers the protected tokens to the backup address
-   * @param dynamicVaultId The id of the testament
-   * @param backupAddress The authorized address to which the protected tokens will be transfered
+   * @param dynamicVaultId The id of thedynamicVault
    */
-  function repossessAccount(uint256 dynamicVaultId, address backupAddress) external;
+  function repossessAccount(uint256 dynamicVaultId)
+    external;
 
   /**
    * @notice Adds backup address

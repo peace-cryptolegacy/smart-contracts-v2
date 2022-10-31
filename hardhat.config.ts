@@ -52,6 +52,9 @@ const config: HardhatUserConfig = {
     user1: {
       default: 5,
     },
+    exploiter: {
+      default: 6,
+    },
   },
 
   networks: {
