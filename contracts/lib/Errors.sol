@@ -12,5 +12,7 @@ library Errors {
   error T_SUCCEEDED(); // The vault has already been succeeded
   error T_NO_TRANSCENDENCE(); // block.timestamp < proofOfLife
   error T_DYNAMIC_VAULT_ALREADY_EXISTS(); // Dynamic vault already exists
+  error T_BACKUP_ADDRESS_IS_OWNER(); // Backup address is owner
+  error T_BACKUP_ADDRESS_ALREADY_EXISTS(); // Backup address already exists
 }
   

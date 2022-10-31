@@ -24,6 +24,7 @@ interface IDynamicVaults {
     uint128 newInheritancePercentage
   );
   event accountRepossessed(uint256 dynamicVaultId, address backupAddress);
+  event BackupAdded(uint256 dynamicVaultId, address backupAddress);
 
   /**
    * @notice Creates a dynamic vault

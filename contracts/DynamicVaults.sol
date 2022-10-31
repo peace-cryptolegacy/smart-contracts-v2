@@ -40,7 +40,7 @@ contract DynamicVaults is IDynamicVaults {
     _;
   }
 
-  modifier onlyowner(Types.DynamicVault storage dynamicVault) {
+  modifier onlyOwner(Types.DynamicVault storage dynamicVault) {
     if (msg.sender != dynamicVault.testament.creationParameters.owner) {
       revert Errors.T_UNAUTHORIZED();
     }
@@ -98,7 +98,7 @@ contract DynamicVaults is IDynamicVaults {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
     for (uint256 i = 0; i < beneficiaries.length; i++) {
-      if(beneficiaries[i].address_ == address(0)) {
+      if (beneficiaries[i].address_ == address(0)) {
         revert Errors.T_ADDRESS_ZERO();
       }
       dynamicVault.testament.beneficiaries.push(beneficiaries[i]);
@@ -114,7 +114,7 @@ contract DynamicVaults is IDynamicVaults {
    * @dev there is no function to remove a token since that can be done by decreasing the allowance of this contract. Doing
    otherwise would be expensive and unnecessary
   */
-  function addToken(uint256 dynamicVaultId, address token) external onlyowner(dynamicVaults[dynamicVaultId]) {
+  function addToken(uint256 dynamicVaultId, address token) external onlyOwner(dynamicVaults[dynamicVaultId]) {
     dynamicVaults[dynamicVaultId].testament.tokens.push(token);
 
     emit TokenAdded(dynamicVaultId, token);
@@ -173,7 +173,7 @@ contract DynamicVaults is IDynamicVaults {
   */
   function updateInactivityMaximum(uint256 dynamicVaultId, uint128 newInactivityMaximum)
     external
-    onlyowner(dynamicVaults[dynamicVaultId])
+    onlyOwner(dynamicVaults[dynamicVaultId])
   {
     dynamicVaults[dynamicVaultId].testament.creationParameters.inactivityMaximum = newInactivityMaximum;
   }
@@ -249,13 +249,26 @@ contract DynamicVaults is IDynamicVaults {
    * @param dynamicVaultId The id of thedynamicVault
    * @param backupAddress The address to add
    */
-  function addBackup(uint256 dynamicVaultId, address backupAddress) external {
+  function addBackup(uint256 dynamicVaultId, address backupAddress) external onlyOwner(dynamicVaults[dynamicVaultId]) {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
     if (backupAddress == address(0)) {
       revert Errors.T_ADDRESS_ZERO();
     }
+
+    if (backupAddress == msg.sender) {
+      revert Errors.T_BACKUP_ADDRESS_IS_OWNER();
+    }
+
+    for (uint256 i = 0; i < dynamicVault.backupAddresses.length; i++) {
+      if (dynamicVault.backupAddresses[i] == backupAddress) {
+        revert Errors.T_BACKUP_ADDRESS_ALREADY_EXISTS();
+      }
+    }
+
     dynamicVault.backupAddresses.push(backupAddress);
+
+    emit BackupAdded(dynamicVaultId, backupAddress);
   }
 
   /**
@@ -365,6 +378,11 @@ contract DynamicVaults is IDynamicVaults {
       beneficiariesInheritancePercentages[i] = dynamicVault.testament.beneficiaries[i].inheritancePercentage;
     }
 
-    return (dynamicVault.testament.tokens, beneficiariesNames, beneficiariesAddresses, beneficiariesInheritancePercentages);
+    return (
+      dynamicVault.testament.tokens,
+      beneficiariesNames,
+      beneficiariesAddresses,
+      beneficiariesInheritancePercentages
+    );
   }
 }
