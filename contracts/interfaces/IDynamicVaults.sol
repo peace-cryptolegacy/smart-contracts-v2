@@ -88,8 +88,7 @@ otherwise would be expensive and unnecessary
    * @notice Transfers the protected tokens to the backup address
    * @param dynamicVaultId The id of thedynamicVault
    */
-  function repossessAccount(uint256 dynamicVaultId)
-    external;
+  function repossessAccount(uint256 dynamicVaultId) external;
 
   /**
    * @notice Adds backup address
@@ -119,45 +118,35 @@ otherwise would be expensive and unnecessary
 
   // VIEW METHODS
 
- /**
-   * @notice Returns the creationParameters of a given dynamic vault id
+  /**
+   * @notice Returns the testament parameters of a given dynamic vault id
    * @param dynamicVaultId The id of the dynamic vault
    * @return owner The owner of the dynamic vault
    * @return claimant The claimant of the dynamic vault
-   * @return backupAddresses The backup addresses
    * @return tokens The approved tokens
    * @return inactivityMaximum The maximum inactivity time
    * @return proofOfLife The last registred proof of life timestamp
    * @return succeeded Whether the dynamic vault has been succeeded
    */
-  function getTestamentCreationParameters(uint256 dynamicVaultId)
+  function getTestamentParameters(uint256 dynamicVaultId)
     external
     view
     returns (
       address owner,
       address claimant,
-      address[] memory backupAddresses,
       address[] memory tokens,
       uint128 inactivityMaximum,
       uint128 proofOfLife,
-      bool succeeded
-    ); 
-
-   /**
-   * @notice Returns the beneficiaries of a given dynamic vault id
-   * @param dynamicVaultId The id of the dynamic vault
-   * @return tokens Approved tokens
-   * @return beneficiariesNames Beneficiaries names
-   * @return beneficiariesAddresses Beneficiaries addresses
-   * @return beneficiariesInheritancePercentages Beneficiaries inheritance percentages
-   */
-  function getTestamentDynamicParameters(uint256 dynamicVaultId)
-    external
-    view
-    returns (
-      address[] memory tokens,
+      bool succeeded,
       string[] memory beneficiariesNames,
       address[] memory beneficiariesAddresses,
       uint256[] memory beneficiariesInheritancePercentages
     );
+
+   /**
+  * @notice Returns the backup addresses of a given dynamic vault id
+  * @param dynamicVaultId The id of the dynamic vault
+  * @return backupAddresses The backup addresses 
+   */
+  function getBackupAddresses(uint256 dynamicVaultId) external view returns (address[] memory);
 }

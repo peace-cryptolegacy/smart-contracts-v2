@@ -25,8 +25,8 @@ contract DynamicVaults is IDynamicVaults {
   modifier onlyOnTRANSCENDENCE(Types.DynamicVault storage dynamicVault) {
     if (
       block.timestamp <
-      dynamicVault.testament.creationParameters.proofOfLife +
-        dynamicVault.testament.creationParameters.inactivityMaximum
+      dynamicVault.testament.proofOfLife +
+        dynamicVault.testament.inactivityMaximum
     ) {
       revert Errors.T_NO_TRANSCENDENCE();
     }
@@ -34,21 +34,21 @@ contract DynamicVaults is IDynamicVaults {
   }
 
   modifier onlyUnsucceeded(Types.DynamicVault storage dynamicVault) {
-    if (dynamicVault.testament.creationParameters.succeeded) {
+    if (dynamicVault.testament.succeeded) {
       revert Errors.T_SUCCEEDED();
     }
     _;
   }
 
   modifier onlyOwner(Types.DynamicVault storage dynamicVault) {
-    if (msg.sender != dynamicVault.testament.creationParameters.owner) {
+    if (msg.sender != dynamicVault.testament.owner) {
       revert Errors.T_UNAUTHORIZED();
     }
     _;
   }
 
   modifier onlyClaimant(Types.DynamicVault storage dynamicVault) {
-    if (msg.sender != dynamicVault.testament.creationParameters.claimant) {
+    if (msg.sender != dynamicVault.testament.claimant) {
       revert Errors.T_UNAUTHORIZED();
     }
     _;
@@ -81,7 +81,7 @@ contract DynamicVaults is IDynamicVaults {
     uint128 inactivityMaximum,
     Types.Beneficiary[] memory beneficiaries
   ) external returns (uint256) {
-    if (dynamicVaults[dynamicVaultId].testament.creationParameters.owner != address(0)) {
+    if (dynamicVaults[dynamicVaultId].testament.owner != address(0)) {
       revert Errors.T_DYNAMIC_VAULT_ALREADY_EXISTS();
     }
 
@@ -89,15 +89,12 @@ contract DynamicVaults is IDynamicVaults {
       revert Errors.T_ADDRESS_ZERO();
     }
 
-    dynamicVaults[dynamicVaultId].testament.creationParameters = Types.TestamentCreationParameters({
-      owner: msg.sender,
-      claimant: claimant,
-      inactivityMaximum: inactivityMaximum,
-      proofOfLife: uint128(block.timestamp),
-      succeeded: false
-    });
-
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
+
+    dynamicVault.testament.owner = msg.sender;
+    dynamicVault.testament.claimant = claimant;
+    dynamicVault.testament.inactivityMaximum = inactivityMaximum;
+    dynamicVault.testament.proofOfLife = uint128(block.timestamp);
 
     for (uint256 i = 0; i < beneficiaries.length; i++) {
       if (beneficiaries[i].address_ == address(0)) {
@@ -177,7 +174,7 @@ contract DynamicVaults is IDynamicVaults {
     external
     onlyOwner(dynamicVaults[dynamicVaultId])
   {
-    dynamicVaults[dynamicVaultId].testament.creationParameters.inactivityMaximum = newInactivityMaximum;
+    dynamicVaults[dynamicVaultId].testament.inactivityMaximum = newInactivityMaximum;
   }
 
   /**
@@ -189,7 +186,7 @@ contract DynamicVaults is IDynamicVaults {
 
     uint128 timestampRef = uint128(block.timestamp);
 
-    dynamicVault.testament.creationParameters.proofOfLife = timestampRef;
+    dynamicVault.testament.proofOfLife = timestampRef;
 
     emit ProofOfLifeUpdated(dynamicVaultId, timestampRef);
   }
@@ -206,18 +203,18 @@ contract DynamicVaults is IDynamicVaults {
     onlyUnsucceeded(dynamicVaults[dynamicVaultId])
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
-    dynamicVault.testament.creationParameters.succeeded = true;
+    dynamicVault.testament.succeeded = true;
 
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
       IERC20 token = IERC20(dynamicVault.testament.tokens[i]);
-      uint256 allowedBalance = token.allowance(dynamicVault.testament.creationParameters.owner, address(this));
+      uint256 allowedBalance = token.allowance(dynamicVault.testament.owner, address(this));
 
-      dynamicVault.testament.creationParameters.succeeded = true;
+      dynamicVault.testament.succeeded = true;
 
       for (uint256 n = 0; n < dynamicVault.testament.beneficiaries.length; n++) {
         uint256 amount = (allowedBalance * dynamicVault.testament.beneficiaries[n].inheritancePercentage) / 100;
         token.safeTransferFrom(
-          dynamicVault.testament.creationParameters.owner,
+          dynamicVault.testament.owner,
           dynamicVault.testament.beneficiaries[n].address_,
           amount
         );
@@ -235,8 +232,8 @@ contract DynamicVaults is IDynamicVaults {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
       IERC20 token = IERC20(dynamicVault.testament.tokens[i]);
-      uint256 allowedBalance = token.allowance(dynamicVault.testament.creationParameters.owner, address(this));
-      token.safeTransferFrom(dynamicVault.testament.creationParameters.owner, msg.sender, allowedBalance);
+      uint256 allowedBalance = token.allowance(dynamicVault.testament.owner, address(this));
+      token.safeTransferFrom(dynamicVault.testament.owner, msg.sender, allowedBalance);
     }
 
     emit accountRepossessed(dynamicVaultId, msg.sender);
@@ -313,55 +310,25 @@ contract DynamicVaults is IDynamicVaults {
   // VIEW METHODS
 
   /**
-   * @notice Returns the creationParameters of a given dynamic vault id
+   * @notice Returns the testament parameters of a given dynamic vault id
    * @param dynamicVaultId The id of the dynamic vault
    * @return owner The owner of the dynamic vault
    * @return claimant The claimant of the dynamic vault
-   * @return backupAddresses The backup addresses
    * @return tokens The approved tokens
    * @return inactivityMaximum The maximum inactivity time
    * @return proofOfLife The last registred proof of life timestamp
    * @return succeeded Whether the dynamic vault has been succeeded
    */
-  function getTestamentCreationParameters(uint256 dynamicVaultId)
+  function getTestamentParameters(uint256 dynamicVaultId)
     external
     view
     returns (
       address owner,
       address claimant,
-      address[] memory backupAddresses,
       address[] memory tokens,
       uint128 inactivityMaximum,
       uint128 proofOfLife,
-      bool succeeded
-    )
-  {
-    Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
-
-    return (
-      dynamicVault.testament.creationParameters.owner,
-      dynamicVault.testament.creationParameters.claimant,
-      dynamicVault.backupAddresses,
-      dynamicVault.testament.tokens,
-      dynamicVault.testament.creationParameters.inactivityMaximum,
-      dynamicVault.testament.creationParameters.proofOfLife,
-      dynamicVault.testament.creationParameters.succeeded
-    );
-  }
-
-  /**
-   * @notice Returns the beneficiaries of a given dynamic vault id
-   * @param dynamicVaultId The id of the dynamic vault
-   * @return tokens Approved tokens
-   * @return beneficiariesNames Beneficiaries names
-   * @return beneficiariesAddresses Beneficiaries addresses
-   * @return beneficiariesInheritancePercentages Beneficiaries inheritance percentages
-   */
-  function getTestamentDynamicParameters(uint256 dynamicVaultId)
-    external
-    view
-    returns (
-      address[] memory tokens,
+      bool succeeded,
       string[] memory beneficiariesNames,
       address[] memory beneficiariesAddresses,
       uint256[] memory beneficiariesInheritancePercentages
@@ -369,7 +336,7 @@ contract DynamicVaults is IDynamicVaults {
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
-    beneficiariesNames = new string[](dynamicVault.testament.beneficiaries.length);
+       beneficiariesNames = new string[](dynamicVault.testament.beneficiaries.length);
     beneficiariesAddresses = new address[](dynamicVault.testament.beneficiaries.length);
     beneficiariesInheritancePercentages = new uint256[](dynamicVault.testament.beneficiaries.length);
 
@@ -380,10 +347,25 @@ contract DynamicVaults is IDynamicVaults {
     }
 
     return (
+      dynamicVault.testament.owner,
+      dynamicVault.testament.claimant,
       dynamicVault.testament.tokens,
+      dynamicVault.testament.inactivityMaximum,
+      dynamicVault.testament.proofOfLife,
+      dynamicVault.testament.succeeded,
       beneficiariesNames,
       beneficiariesAddresses,
       beneficiariesInheritancePercentages
     );
+  }
+
+  /**
+  * @notice Returns the backup addresses of a given dynamic vault id
+  * @param dynamicVaultId The id of the dynamic vault
+  * @return backupAddresses The backup addresses 
+   */
+  function getBackupAddresses(uint256 dynamicVaultId) external view returns (address[] memory) {
+    Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
+    return dynamicVault.backupAddresses;
   }
 }

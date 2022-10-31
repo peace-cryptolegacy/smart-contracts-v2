@@ -10,16 +10,12 @@ library Types {
     uint256 inheritancePercentage;
   }
 
-  struct TestamentCreationParameters{
+  struct Testament{
     address owner;
     address claimant;
     uint128 inactivityMaximum;
     uint128 proofOfLife;
     bool succeeded;
-  }
-
-  struct Testament{
-    TestamentCreationParameters creationParameters;
     Beneficiary[] beneficiaries;
     address[] tokens;
   }
