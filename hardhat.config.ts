@@ -40,7 +40,7 @@ const config: HardhatUserConfig = {
     governance: {
       default: 1,
     },
-    testator: {
+    dynamicVaultOwner: {
       default: 2,
     },
     beneficiary1: {
