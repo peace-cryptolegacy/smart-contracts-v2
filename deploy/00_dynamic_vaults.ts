@@ -16,14 +16,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   log('Deployer: ' + deployer);
 
   // Deploy test token
-  await deploy('ExampleContract', {
+  await deploy('DynamicVaults', {
     from: deployer,
   });
 
-  const ExampleContract = await ethers.getContract('ExampleContract');
+  const DynamicVaults = await ethers.getContract('DynamicVaults');
 
   // Print all contracts info pretty
-  log('ExampleContract address: ' + ExampleContract.address);
+  log('DynamicVaults address: ' + DynamicVaults.address);
 };
 export default func;
-func.tags = ['all', 'ExampleContract', 'test'];
+func.tags = ['all', 'dynamicVaults', 'test'];
