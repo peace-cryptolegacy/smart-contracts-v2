@@ -12,18 +12,22 @@ library Types {
     uint256 inheritancePercentage;
   }
 
-  struct Parameters{
+  struct TestamentParameters{
     address owner;
     address claimant;
     uint128 inactivityMaximum;
     uint128 proofOfLife;
     address[] tokens;
-    address[] backupAddresses;
     bool succeeded;
   }
 
-  struct DynamicVault{
-    Parameters parameters;
+  struct Testament{
+    TestamentParameters parameters;
     Beneficiary[] beneficiaries;
+  }
+
+  struct DynamicVault {
+    Testament testament;
+    address[] backupAddresses;
   }
 }

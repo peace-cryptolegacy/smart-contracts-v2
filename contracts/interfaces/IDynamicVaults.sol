@@ -31,15 +31,13 @@ interface IDynamicVaults {
    * @param inactivityMaximum The maximum inactivity time
    * @param tokens Array of tokens to be transferred in case of emergency
    * @param beneficiaries The beneficiaries that will inherit the vault
-   * @param backupAddresses The backup addresses
    */
-  function createDynamicVault(
+  function createTestament(
     uint256 dynamicVaultId,
     address claimant,
     uint128 inactivityMaximum,
     address[] memory tokens,
-    Types.Beneficiary[] memory beneficiaries,
-    address[] memory backupAddresses
+    Types.Beneficiary[] memory beneficiaries
   ) external returns (uint256);
 
   /**
