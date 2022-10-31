@@ -23,5 +23,5 @@ export type Mocks = {
 
 export type User = {
   address: string;
-  DynamicVault: DynamicVaults | MockContract;
+  DynamicVaults: DynamicVaults | MockContract;
 };

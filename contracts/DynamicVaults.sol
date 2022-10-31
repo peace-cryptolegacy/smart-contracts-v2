@@ -204,6 +204,7 @@ contract DynamicVaults is IDynamicVaults {
     onlyUnsucceeded(dynamicVaults[dynamicVaultId])
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
+    dynamicVault.testament.creationParameters.succeeded = true;
 
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
       IERC20 token = IERC20(dynamicVault.testament.tokens[i]);

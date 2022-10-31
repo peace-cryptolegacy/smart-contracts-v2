@@ -24,23 +24,23 @@ export const setupTestContracts = async (
 
   // setup users
   const testGovernance = await setupUser(users[1].address, {
-    DynamicVault: deployedDynamicVaults,
+    DynamicVaults: deployedDynamicVaults,
   });
 
   const testDynamicVaultOwner = await setupUser(users[2].address, {
-    DynamicVault: deployedDynamicVaults,
+    DynamicVaults: deployedDynamicVaults,
   });
 
   const testBeneficiary1 = await setupUser(users[3].address, {
-    DynamicVault: deployedDynamicVaults,
+    DynamicVaults: deployedDynamicVaults,
   });
 
   const testBeneficiary2 = await setupUser(users[4].address, {
-    DynamicVault: deployedDynamicVaults,
+    DynamicVaults: deployedDynamicVaults,
   });
 
   const testUser1 = await setupUser(users[5].address, {
-    DynamicVault: deployedDynamicVaults,
+    DynamicVaults: deployedDynamicVaults,
   });
 
   // setup mocks
@@ -50,7 +50,7 @@ export const setupTestContracts = async (
   // create testament
   const usedDynamicVaultId = DYNAMIC_VAULT_ID;
 
-  await testDynamicVaultOwner.DynamicVault.createTestament(
+  await testDynamicVaultOwner.DynamicVaults.createTestament(
     usedDynamicVaultId,
     testBeneficiary1.address,
     INACTIVITY_MAXIMUM,
