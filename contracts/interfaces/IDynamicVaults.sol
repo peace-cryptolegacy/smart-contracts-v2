@@ -29,14 +29,12 @@ interface IDynamicVaults {
    * @notice Creates a dynamic vault
    * @param dynamicVaultId The dynamic vault id
    * @param inactivityMaximum The maximum inactivity time
-   * @param tokens Array of tokens to be transferred in case of emergency
    * @param beneficiaries The beneficiaries that will inherit the vault
    */
   function createTestament(
     uint256 dynamicVaultId,
     address claimant,
     uint128 inactivityMaximum,
-    address[] memory tokens,
     Types.Beneficiary[] memory beneficiaries
   ) external returns (uint256);
 
@@ -119,18 +117,19 @@ otherwise would be expensive and unnecessary
   ) external;
 
   // VIEW METHODS
-  /**
-    * @notice Returns the parameters of a given dynamic vault id 
-    * @param dynamicVaultId The id of the dynamic vault
-    * @return owner The owner of the dynamic vault
-    * @return claimant The claimant of the dynamic vault
-    * @return backupAddresses The backup addresses 
-    * @return tokens The approved tokens 
-    * @return inactivityMaximum The maximum inactivity time
-    * @return proofOfLife The last registred proof of life timestamp
-    * @return succeeded Whether the dynamic vault has been succeeded 
+
+ /**
+   * @notice Returns the creationParameters of a given dynamic vault id
+   * @param dynamicVaultId The id of the dynamic vault
+   * @return owner The owner of the dynamic vault
+   * @return claimant The claimant of the dynamic vault
+   * @return backupAddresses The backup addresses
+   * @return tokens The approved tokens
+   * @return inactivityMaximum The maximum inactivity time
+   * @return proofOfLife The last registred proof of life timestamp
+   * @return succeeded Whether the dynamic vault has been succeeded
    */
-  function getDynamicVaultParameters(uint256 dynamicVaultId)
+  function getTestamentCreationParameters(uint256 dynamicVaultId)
     external
     view
     returns (
@@ -141,16 +140,23 @@ otherwise would be expensive and unnecessary
       uint128 inactivityMaximum,
       uint128 proofOfLife,
       bool succeeded
-    );
+    ); 
 
-     /**
-    * @notice Returns the beneficiaries of a given dynamic vault id 
-    * @param dynamicVaultId The id of the dynamic vault
-    * @return names
-    * @return addresses_ The beneficiary addresses
+   /**
+   * @notice Returns the beneficiaries of a given dynamic vault id
+   * @param dynamicVaultId The id of the dynamic vault
+   * @return tokens Approved tokens
+   * @return beneficiariesNames Beneficiaries names
+   * @return beneficiariesAddresses Beneficiaries addresses
+   * @return beneficiariesInheritancePercentages Beneficiaries inheritance percentages
    */
-  function getDynamicVaultBeneficiaries(uint256 dynamicVaultId)
+  function getTestamentDynamicParameters(uint256 dynamicVaultId)
     external
     view
-    returns (string[] memory names, address[] memory addresses_, uint256[] memory inheritancePercentages);
+    returns (
+      address[] memory tokens,
+      string[] memory beneficiariesNames,
+      address[] memory beneficiariesAddresses,
+      uint256[] memory beneficiariesInheritancePercentages
+    );
 }

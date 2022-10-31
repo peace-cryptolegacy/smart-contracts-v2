@@ -10,7 +10,7 @@ library Errors {
   error T_INHERITANCE_PERCENTAGE_EXCEEDED(); // Inheritance percentage exceeded
   error T_UNAUTHORIZED(); // Unauthorized
   error T_SUCCEEDED(); // The vault has already been succeeded
-  error T_NO_TRANSCENDANCE(); // block.timestamp < proofOfLife
+  error T_NO_TRANSCENDENCE(); // block.timestamp < proofOfLife
   error T_DYNAMIC_VAULT_ALREADY_EXISTS(); // Dynamic vault already exists
 }
   
