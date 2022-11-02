@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -27,11 +27,7 @@ contract DynamicVaults is IDynamicVaults {
   mapping(uint256 => Types.DynamicVault) public dynamicVaults;
 
   modifier onlyOnTRANSCENDENCE(Types.DynamicVault storage dynamicVault) {
-    if (
-      block.timestamp <
-      dynamicVault.testament.proofOfLife +
-        dynamicVault.testament.inactivityMaximum
-    ) {
+    if (block.timestamp < dynamicVault.testament.proofOfLife + dynamicVault.testament.inactivityMaximum) {
       revert Errors.T_NO_TRANSCENDENCE();
     }
     _;
@@ -67,10 +63,10 @@ contract DynamicVaults is IDynamicVaults {
       }
     }
 
-      if (!authorized) {
-        revert Errors.T_UNAUTHORIZED();
-      }
-      _;
+    if (!authorized) {
+      revert Errors.T_UNAUTHORIZED();
+    }
+    _;
   }
 
   /**
@@ -210,7 +206,6 @@ contract DynamicVaults is IDynamicVaults {
     onlyOnTRANSCENDENCE(dynamicVaults[dynamicVaultId])
     onlyUnsucceeded(dynamicVaults[dynamicVaultId])
   {
-
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
     dynamicVault.testament.succeeded = true;
@@ -219,7 +214,7 @@ contract DynamicVaults is IDynamicVaults {
       ERC20 token = ERC20(dynamicVault.testament.tokens[i]);
       uint128 amount = uint128(token.allowance(dynamicVault.testament.owner, address(this)));
 
-      if(token.balanceOf(dynamicVault.testament.owner) < amount ) {
+      if (token.balanceOf(dynamicVault.testament.owner) < amount) {
         amount = uint128(token.balanceOf(dynamicVault.testament.owner));
       }
 
@@ -227,7 +222,9 @@ contract DynamicVaults is IDynamicVaults {
       uint128 normalizedAmount = amount.scaleToWad(tokenDecimals);
 
       for (uint256 n = 0; n < dynamicVault.testament.beneficiaries.length; n++) {
-        uint128 transferAmount = (normalizedAmount.wadMul(dynamicVault.testament.beneficiaries[n].inheritancePercentage)).wadDiv(uint128(100 * 1e18));
+        uint128 transferAmount = (
+          normalizedAmount.wadMul(dynamicVault.testament.beneficiaries[n].inheritancePercentage)
+        ).wadDiv(uint128(100 * 1e18));
         token.safeTransferFrom(
           dynamicVault.testament.owner,
           dynamicVault.testament.beneficiaries[n].address_,
@@ -351,7 +348,7 @@ contract DynamicVaults is IDynamicVaults {
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
-       beneficiariesNames = new string[](dynamicVault.testament.beneficiaries.length);
+    beneficiariesNames = new string[](dynamicVault.testament.beneficiaries.length);
     beneficiariesAddresses = new address[](dynamicVault.testament.beneficiaries.length);
     beneficiariesInheritancePercentages = new uint256[](dynamicVault.testament.beneficiaries.length);
 
@@ -375,9 +372,9 @@ contract DynamicVaults is IDynamicVaults {
   }
 
   /**
-  * @notice Returns the backup addresses of a given dynamic vault id
-  * @param dynamicVaultId The id of the dynamic vault
-  * @return backupAddresses The backup addresses 
+   * @notice Returns the backup addresses of a given dynamic vault id
+   * @param dynamicVaultId The id of the dynamic vault
+   * @return backupAddresses The backup addresses
    */
   function getBackupAddresses(uint256 dynamicVaultId) external view returns (address[] memory) {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];

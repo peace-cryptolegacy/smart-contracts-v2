@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+pragma solidity >=0.8.8;
 
 import "../lib/Errors.sol";
 import "../lib/Types.sol";
@@ -143,10 +141,10 @@ otherwise would be expensive and unnecessary
       uint256[] memory beneficiariesInheritancePercentages
     );
 
-   /**
-  * @notice Returns the backup addresses of a given dynamic vault id
-  * @param dynamicVaultId The id of the dynamic vault
-  * @return backupAddresses The backup addresses 
+  /**
+   * @notice Returns the backup addresses of a given dynamic vault id
+   * @param dynamicVaultId The id of the dynamic vault
+   * @return backupAddresses The backup addresses
    */
   function getBackupAddresses(uint256 dynamicVaultId) external view returns (address[] memory);
 }
