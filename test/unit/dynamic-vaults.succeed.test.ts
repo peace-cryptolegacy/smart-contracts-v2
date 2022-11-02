@@ -64,7 +64,7 @@ describe('DynamicVaults - succeed', function () {
     ).to.be.revertedWith('T_SUCCEEDED');
   });
 
-  it.only('A successful succeed should increase the beneficiary funds accordingly to the inheritance percentage', async () => {
+  it('A successful succeed should increase the beneficiary funds accordingly to the inheritance percentage', async () => {
     await expect(
       dynamicVaultOwner.FDAI?.approve(DynamicVaults.address, APPROVE_AMOUNT)
     ).to.emit(dynamicVaultOwner.FDAI, 'Approval');

@@ -23,6 +23,7 @@ interface IDynamicVaults {
   );
   event accountRepossessed(uint256 dynamicVaultId, address backupAddress);
   event BackupAdded(uint256 dynamicVaultId, address backupAddress);
+  event EstablishmentFeeRateUpdated(uint128 newEstablishmentFeeRate);
 
   /**
    * @notice Creates a dynamic vault
@@ -113,6 +114,23 @@ otherwise would be expensive and unnecessary
     address beneficiaryAddress,
     uint128 newInheritancePercentage
   ) external;
+
+  // Methods callable only by the owner of the contract
+
+  /**
+   * @notice Sets the global establishment fee rate
+   **/
+  function updateEstablishmentFeeRate(uint128 newEstablishmentFeeRate) external;
+
+  /**
+   * @notice Stops all actions on all vaults
+   */
+  function pause() external;
+
+  /**
+   * @notice Unpause vaults. Makes actions available again on all vaults
+   **/
+  function unpause() external;
 
   // VIEW METHODS
 

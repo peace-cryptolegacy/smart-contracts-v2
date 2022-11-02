@@ -18,3 +18,4 @@ export const TESTAMENT_CREATION_PARAMS: TestamentCreationParams = [
   ],
 ];
 export const APPROVE_AMOUNT = parseEther('1000');
+export const ESTABLISHMENT_FEE_RATE = parseEther('0.025');

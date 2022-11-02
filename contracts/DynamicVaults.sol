@@ -3,6 +3,8 @@ pragma solidity >=0.8.8;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./lib/Errors.sol";
 import "./lib/Types.sol";
@@ -11,18 +13,20 @@ import "./lib/Scaling.sol";
 
 import "./interfaces/IDynamicVaults.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title DynamicVaults
  * @author Peace Foundation
  * @notice Dyanmic vaults contract that allows for the transfer of tokens in case of emergency
  */
 
-contract DynamicVaults is IDynamicVaults {
+contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeable {
   using SafeERC20 for ERC20;
   using Scaling for uint128;
   using Uint128WadRayMath for uint128;
 
-  uint128 internal establishmentFee = 25000000000000000; // 0.25%
+  uint128 internal establishmentFeeRate;
 
   mapping(uint256 => Types.DynamicVault) public dynamicVaults;
 
@@ -40,8 +44,8 @@ contract DynamicVaults is IDynamicVaults {
     _;
   }
 
-  modifier onlyOwner(Types.DynamicVault storage dynamicVault) {
-    if (msg.sender != dynamicVault.testament.owner) {
+  modifier onlyDynamicVaultOwner(Types.DynamicVault storage dynamicVault) {
+    if (msg.sender != dynamicVault.owner) {
       revert Errors.T_UNAUTHORIZED();
     }
     _;
@@ -69,6 +73,13 @@ contract DynamicVaults is IDynamicVaults {
     _;
   }
 
+  function initialize(uint128 establishmentFeeRate_) public initializer {
+    establishmentFeeRate = establishmentFeeRate_;
+    __Ownable_init();
+    // The initializer below does't do anything. It is just called to comply with OpenZeppelin's recommendations
+    __Pausable_init_unchained();
+  }
+
   /**
    * @notice Creates a dynamic vault
    * @param dynamicVaultId The dynamic vault id
@@ -83,7 +94,7 @@ contract DynamicVaults is IDynamicVaults {
     uint128 inactivityMaximum,
     Types.Beneficiary[] memory beneficiaries
   ) external returns (uint256) {
-    if (dynamicVaults[dynamicVaultId].testament.owner != address(0)) {
+    if (dynamicVaults[dynamicVaultId].owner != address(0)) {
       revert Errors.T_DYNAMIC_VAULT_ALREADY_EXISTS();
     }
 
@@ -93,12 +104,12 @@ contract DynamicVaults is IDynamicVaults {
 
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
-    dynamicVault.testament.owner = msg.sender;
+    dynamicVault.owner = msg.sender;
     dynamicVault.testament.claimant = claimant;
     dynamicVault.testament.inactivityMaximum = inactivityMaximum;
     dynamicVault.testament.proofOfLife = uint128(block.timestamp);
 
-    dynamicVault.ESTABLISHMENT_FEE = establishmentFee;
+    dynamicVault.ESTABLISHMENT_FEE_RATE = establishmentFeeRate;
 
     for (uint256 i = 0; i < beneficiaries.length; i++) {
       if (beneficiaries[i].address_ == address(0)) {
@@ -117,7 +128,10 @@ contract DynamicVaults is IDynamicVaults {
    * @dev there is no function to remove a token since that can be done by decreasing the allowance of this contract. Doing
    otherwise would be expensive and unnecessary
   */
-  function addToken(uint256 dynamicVaultId, address token) external onlyOwner(dynamicVaults[dynamicVaultId]) {
+  function addToken(uint256 dynamicVaultId, address token)
+    external
+    onlyDynamicVaultOwner(dynamicVaults[dynamicVaultId])
+  {
     dynamicVaults[dynamicVaultId].testament.tokens.push(token);
 
     emit TokenAdded(dynamicVaultId, token);
@@ -176,7 +190,7 @@ contract DynamicVaults is IDynamicVaults {
   */
   function updateInactivityMaximum(uint256 dynamicVaultId, uint128 newInactivityMaximum)
     external
-    onlyOwner(dynamicVaults[dynamicVaultId])
+    onlyDynamicVaultOwner(dynamicVaults[dynamicVaultId])
   {
     dynamicVaults[dynamicVaultId].testament.inactivityMaximum = newInactivityMaximum;
   }
@@ -212,10 +226,10 @@ contract DynamicVaults is IDynamicVaults {
 
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
       ERC20 token = ERC20(dynamicVault.testament.tokens[i]);
-      uint128 amount = uint128(token.allowance(dynamicVault.testament.owner, address(this)));
+      uint128 amount = uint128(token.allowance(dynamicVault.owner, address(this)));
 
-      if (token.balanceOf(dynamicVault.testament.owner) < amount) {
-        amount = uint128(token.balanceOf(dynamicVault.testament.owner));
+      if (token.balanceOf(dynamicVault.owner) < amount) {
+        amount = uint128(token.balanceOf(dynamicVault.owner));
       }
 
       uint8 tokenDecimals = token.decimals();
@@ -226,7 +240,7 @@ contract DynamicVaults is IDynamicVaults {
           normalizedAmount.wadMul(dynamicVault.testament.beneficiaries[n].inheritancePercentage)
         ).wadDiv(uint128(100 * 1e18));
         token.safeTransferFrom(
-          dynamicVault.testament.owner,
+          dynamicVault.owner,
           dynamicVault.testament.beneficiaries[n].address_,
           transferAmount.scaleFromWad(tokenDecimals)
         );
@@ -244,8 +258,8 @@ contract DynamicVaults is IDynamicVaults {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
       ERC20 token = ERC20(dynamicVault.testament.tokens[i]);
-      uint256 allowedBalance = token.allowance(dynamicVault.testament.owner, address(this));
-      token.safeTransferFrom(dynamicVault.testament.owner, msg.sender, allowedBalance);
+      uint256 allowedBalance = token.allowance(dynamicVault.owner, address(this));
+      token.safeTransferFrom(dynamicVault.owner, msg.sender, allowedBalance);
     }
 
     emit accountRepossessed(dynamicVaultId, msg.sender);
@@ -256,7 +270,10 @@ contract DynamicVaults is IDynamicVaults {
    * @param dynamicVaultId The id of thedynamicVault
    * @param backupAddress The address to add
    */
-  function addBackup(uint256 dynamicVaultId, address backupAddress) external onlyOwner(dynamicVaults[dynamicVaultId]) {
+  function addBackup(uint256 dynamicVaultId, address backupAddress)
+    external
+    onlyDynamicVaultOwner(dynamicVaults[dynamicVaultId])
+  {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
     if (backupAddress == address(0)) {
@@ -285,7 +302,7 @@ contract DynamicVaults is IDynamicVaults {
    */
   function removeBackup(uint256 dynamicVaultId, address backupAddress)
     external
-    onlyOwner(dynamicVaults[dynamicVaultId])
+    onlyDynamicVaultOwner(dynamicVaults[dynamicVaultId])
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
 
@@ -317,6 +334,31 @@ contract DynamicVaults is IDynamicVaults {
     }
 
     emit BeneficiaryPercentageUpdated(dynamicVaultId, address_, newInheritancePercentage);
+  }
+
+  // Methods callable only by the owner of the contract
+
+  /**
+   * @notice Sets the global establishment fee rate
+   **/
+  function updateEstablishmentFeeRate(uint128 newEstablishmentFeeRate) external onlyOwner {
+    establishmentFeeRate = newEstablishmentFeeRate;
+
+    emit EstablishmentFeeRateUpdated(newEstablishmentFeeRate);
+  }
+
+  /**
+   * @notice Stops all actions on all vaults
+   */
+  function pause() external onlyOwner {
+    _pause();
+  }
+
+  /**
+   * @notice Unpause vaults. Makes actions available again on all vaults
+   **/
+  function unpause() external onlyOwner {
+    _unpause();
   }
 
   // VIEW METHODS
@@ -359,7 +401,7 @@ contract DynamicVaults is IDynamicVaults {
     }
 
     return (
-      dynamicVault.testament.owner,
+      dynamicVault.owner,
       dynamicVault.testament.claimant,
       dynamicVault.testament.tokens,
       dynamicVault.testament.inactivityMaximum,

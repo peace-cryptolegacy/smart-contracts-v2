@@ -1,9 +1,14 @@
 import {BigNumber} from 'ethers';
 import {parseEther} from 'ethers/lib/utils';
+import {ethers} from 'hardhat';
 
 import {DynamicVaults} from '../../../typechain';
 import {setupUser} from '../../utils';
-import {DYNAMIC_VAULT_ID, INACTIVITY_MAXIMUM} from '../../utils/constants';
+import {
+  DYNAMIC_VAULT_ID,
+  ESTABLISHMENT_FEE_RATE,
+  INACTIVITY_MAXIMUM,
+} from '../../utils/constants';
 import {Deployer, Mocks, User} from '../../utils/types';
 
 //Functional setup for Position Contract Tests :
@@ -23,7 +28,10 @@ export const setupTestContracts = async (
   testExploiter: User;
 }> => {
   const deployedDynamicVaults = await deployer.DynamicVaultsF.deploy();
-  const deployedFDAI = await deployer.FDAIF.deploy();
+
+  await deployedDynamicVaults
+    .connect(await ethers.getSigner(users[1].address))
+    .initialize(ESTABLISHMENT_FEE_RATE);
 
   // setup users
   const testGovernance = await setupUser(users[1].address, {
