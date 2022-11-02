@@ -9,7 +9,11 @@ import {
 
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 
-import {DynamicVaults, DynamicVaults__factory} from '../../typechain';
+import {
+  DynamicVaults,
+  DynamicVaults__factory,
+  FDAI__factory,
+} from '../../typechain';
 
 export async function setupUsers<
   T extends {[contractName: string]: Contract | ContractFactory}
@@ -50,6 +54,8 @@ export async function setupFixture(fixtureName: string) {
   const TestTokenM = await deployMockContract(signerDeployer, IERC20.abi);
 
   const contracts = {
+    FDAIF: <FDAI__factory>await ethers.getContractFactory('FDAI'),
+
     DynamicVaults: <DynamicVaults>await ethers.getContract('DynamicVaults'),
     DynamicVaultsF: <DynamicVaults__factory>(
       await ethers.getContractFactory('DynamicVaults')

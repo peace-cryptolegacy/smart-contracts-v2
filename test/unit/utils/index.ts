@@ -1,4 +1,5 @@
 import {BigNumber} from 'ethers';
+import {parseEther} from 'ethers/lib/utils';
 
 import {DynamicVaults} from '../../../typechain';
 import {setupUser} from '../../utils';
@@ -22,6 +23,7 @@ export const setupTestContracts = async (
   testExploiter: User;
 }> => {
   const deployedDynamicVaults = await deployer.DynamicVaultsF.deploy();
+  const deployedFDAI = await deployer.FDAIF.deploy();
 
   // setup users
   const testGovernance = await setupUser(users[1].address, {
@@ -63,7 +65,7 @@ export const setupTestContracts = async (
       {
         name: 'test',
         address_: testBeneficiary1.address,
-        inheritancePercentage: 0,
+        inheritancePercentage: parseEther('50'),
       },
     ]
   );

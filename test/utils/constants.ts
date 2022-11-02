@@ -1,4 +1,5 @@
 import {BigNumber, constants} from 'ethers';
+import {parseEther} from 'ethers/lib/utils';
 import {TestamentCreationParams} from './types';
 
 export const DYNAMIC_VAULT_ID = BigNumber.from(0);
@@ -16,3 +17,4 @@ export const TESTAMENT_CREATION_PARAMS: TestamentCreationParams = [
     },
   ],
 ];
+export const APPROVE_AMOUNT = parseEther('1000');

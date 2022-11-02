@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./lib/Errors.sol";
 import "./lib/Types.sol";
+import "./lib/Uint128WadRayMath.sol";
+import "./lib/Scaling.sol";
 
 import "./interfaces/IDynamicVaults.sol";
 
@@ -16,7 +18,9 @@ import "./interfaces/IDynamicVaults.sol";
  */
 
 contract DynamicVaults is IDynamicVaults {
-  using SafeERC20 for IERC20;
+  using SafeERC20 for ERC20;
+  using Scaling for uint128;
+  using Uint128WadRayMath for uint128;
 
   uint128 internal establishmentFee = 25000000000000000; // 0.25%
 
@@ -74,6 +78,8 @@ contract DynamicVaults is IDynamicVaults {
    * @param dynamicVaultId The dynamic vault id
    * @param inactivityMaximum The maximum inactivity time
    * @param beneficiaries The beneficiaries that will inherit the vault
+   * @dev The beneficiaries percentages should be with an 18 decimals precision to allow for percentages with decimals
+   * @dev The beneficiaries percentages should add up to 100%
    */
   function createTestament(
     uint256 dynamicVaultId,
@@ -95,6 +101,8 @@ contract DynamicVaults is IDynamicVaults {
     dynamicVault.testament.claimant = claimant;
     dynamicVault.testament.inactivityMaximum = inactivityMaximum;
     dynamicVault.testament.proofOfLife = uint128(block.timestamp);
+
+    dynamicVault.ESTABLISHMENT_FEE = establishmentFee;
 
     for (uint256 i = 0; i < beneficiaries.length; i++) {
       if (beneficiaries[i].address_ == address(0)) {
@@ -202,21 +210,28 @@ contract DynamicVaults is IDynamicVaults {
     onlyOnTRANSCENDENCE(dynamicVaults[dynamicVaultId])
     onlyUnsucceeded(dynamicVaults[dynamicVaultId])
   {
+
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
+
     dynamicVault.testament.succeeded = true;
 
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
-      IERC20 token = IERC20(dynamicVault.testament.tokens[i]);
-      uint256 allowedBalance = token.allowance(dynamicVault.testament.owner, address(this));
+      ERC20 token = ERC20(dynamicVault.testament.tokens[i]);
+      uint128 amount = uint128(token.allowance(dynamicVault.testament.owner, address(this)));
 
-      dynamicVault.testament.succeeded = true;
+      if(token.balanceOf(dynamicVault.testament.owner) < amount ) {
+        amount = uint128(token.balanceOf(dynamicVault.testament.owner));
+      }
+
+      uint8 tokenDecimals = token.decimals();
+      uint128 normalizedAmount = amount.scaleToWad(tokenDecimals);
 
       for (uint256 n = 0; n < dynamicVault.testament.beneficiaries.length; n++) {
-        uint256 amount = (allowedBalance * dynamicVault.testament.beneficiaries[n].inheritancePercentage) / 100;
+        uint128 transferAmount = (normalizedAmount.wadMul(dynamicVault.testament.beneficiaries[n].inheritancePercentage)).wadDiv(uint128(100 * 1e18));
         token.safeTransferFrom(
           dynamicVault.testament.owner,
           dynamicVault.testament.beneficiaries[n].address_,
-          amount
+          transferAmount.scaleFromWad(tokenDecimals)
         );
       }
     }
@@ -231,7 +246,7 @@ contract DynamicVaults is IDynamicVaults {
   function repossessAccount(uint256 dynamicVaultId) external onlyBackup(dynamicVaults[dynamicVaultId]) {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
     for (uint256 i = 0; i < dynamicVault.testament.tokens.length; i++) {
-      IERC20 token = IERC20(dynamicVault.testament.tokens[i]);
+      ERC20 token = ERC20(dynamicVault.testament.tokens[i]);
       uint256 allowedBalance = token.allowance(dynamicVault.testament.owner, address(this));
       token.safeTransferFrom(dynamicVault.testament.owner, msg.sender, allowedBalance);
     }

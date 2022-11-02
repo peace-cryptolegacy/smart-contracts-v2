@@ -7,7 +7,7 @@ library Types {
   struct Beneficiary{
     string name;
     address payable address_;
-    uint256 inheritancePercentage;
+    uint128 inheritancePercentage;
   }
 
   struct Testament{
@@ -23,5 +23,6 @@ library Types {
   struct DynamicVault {
     Testament testament;
     address[] backupAddresses;
+    uint128 ESTABLISHMENT_FEE;
   }
 }

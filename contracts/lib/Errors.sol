@@ -14,5 +14,12 @@ library Errors {
   error T_DYNAMIC_VAULT_ALREADY_EXISTS(); // Dynamic vault already exists
   error T_BACKUP_ADDRESS_IS_OWNER(); // Backup address is owner
   error T_BACKUP_ADDRESS_ALREADY_EXISTS(); // Backup address already exists
+
+  //*** Library Specific Errors ***
+
+  // WadRayMath
+  error MATH_MULTIPLICATION_OVERFLOW(); // "The multiplication would result in a overflow";
+  error MATH_ADDITION_OVERFLOW(); // "The addition would result in a overflow";
+  error MATH_DIVISION_BY_ZERO(); // "The division would result in a divzion by zero";
 }
   
