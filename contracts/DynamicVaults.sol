@@ -30,7 +30,7 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
 
   mapping(uint256 => Types.DynamicVault) public dynamicVaults;
 
-  modifier onlyOnTRANSCENDENCE(Types.DynamicVault storage dynamicVault) {
+  modifier onlyOnTranscendence(Types.DynamicVault storage dynamicVault) {
     if (block.timestamp < dynamicVault.testament.proofOfLife + dynamicVault.testament.inactivityMaximum) {
       revert Errors.T_NO_TRANSCENDENCE();
     }
@@ -217,7 +217,7 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
   function succeed(uint256 dynamicVaultId)
     external
     onlyClaimant(dynamicVaults[dynamicVaultId])
-    onlyOnTRANSCENDENCE(dynamicVaults[dynamicVaultId])
+    onlyOnTranscendence(dynamicVaults[dynamicVaultId])
     onlyUnsucceeded(dynamicVaults[dynamicVaultId])
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[dynamicVaultId];
