@@ -1,11 +1,9 @@
-import {BigNumber} from 'ethers';
 import {parseEther} from 'ethers/lib/utils';
 import {ethers} from 'hardhat';
-
 import {DynamicVaults} from '../../../typechain';
+
 import {setupUser} from '../../utils';
 import {
-  DYNAMIC_VAULT_ID,
   ESTABLISHMENT_FEE_RATE,
   INACTIVITY_MAXIMUM,
 } from '../../utils/constants';
@@ -18,7 +16,6 @@ export const setupTestContracts = async (
   mocks: Mocks,
   users: ({address: string} & Deployer)[]
 ): Promise<{
-  usedDynamicVaultId: BigNumber;
   deployedDynamicVaults: DynamicVaults;
   testGovernance: User;
   testDynamicVaultOwner: User;
@@ -62,11 +59,7 @@ export const setupTestContracts = async (
   await mocks.TestToken.mock.transfer.returns(true);
   await mocks.TestToken.mock.transferFrom.returns(true);
 
-  // create testament
-  const usedDynamicVaultId = DYNAMIC_VAULT_ID;
-
   await testDynamicVaultOwner.DynamicVaults.createTestament(
-    usedDynamicVaultId,
     testBeneficiary1.address,
     INACTIVITY_MAXIMUM,
     [
@@ -79,7 +72,6 @@ export const setupTestContracts = async (
   );
 
   return {
-    usedDynamicVaultId,
     deployedDynamicVaults,
     testGovernance,
     testDynamicVaultOwner,

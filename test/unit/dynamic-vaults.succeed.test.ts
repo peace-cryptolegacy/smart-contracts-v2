@@ -14,16 +14,16 @@ const setup = deployments.createFixture(async () => {
 
 describe('DynamicVaults - succeed', function () {
   let DynamicVaults: DynamicVaults;
-  let dynamicVaultId: BigNumber;
+  let owner: string;
   let dynamicVaultOwner: User, beneficiary1: User;
   let FDAI: FDAI;
   beforeEach(async () => {
     const {deployer, mocks, users} = await setup();
 
-    const {deployedDynamicVaults, usedDynamicVaultId, testBeneficiary1} =
+    const {deployedDynamicVaults, testDynamicVaultOwner, testBeneficiary1} =
       await setupTestContracts(deployer, mocks, users);
     DynamicVaults = deployedDynamicVaults;
-    dynamicVaultId = usedDynamicVaultId;
+    owner = testDynamicVaultOwner.address;
     beneficiary1 = testBeneficiary1;
 
     const deployedFDAI = await deployer.FDAIF.deploy();
@@ -36,13 +36,13 @@ describe('DynamicVaults - succeed', function () {
   });
 
   it('Calling the succeed function when the owner has not transcended should revert', async () => {
-    await expect(
-      beneficiary1.DynamicVaults.succeed(dynamicVaultId)
-    ).to.be.revertedWith('T_NO_TRANSCENDENCE');
+    await expect(beneficiary1.DynamicVaults.succeed(owner)).to.be.revertedWith(
+      'T_NO_TRANSCENDENCE'
+    );
   });
 
   it('Calling the succeed function as someone that is not the claimer should revert', async () => {
-    await expect(DynamicVaults.succeed(dynamicVaultId)).to.be.revertedWith(
+    await expect(DynamicVaults.succeed(owner)).to.be.revertedWith(
       'T_UNAUTHORIZED'
     );
   });
@@ -54,14 +54,14 @@ describe('DynamicVaults - succeed', function () {
 
     await ethers.provider.send('evm_mine', []);
 
-    await expect(beneficiary1.DynamicVaults.succeed(dynamicVaultId)).to.emit(
+    await expect(beneficiary1.DynamicVaults.succeed(owner)).to.emit(
       beneficiary1.DynamicVaults,
       'TestamentSucceeded'
     );
 
-    await expect(
-      beneficiary1.DynamicVaults.succeed(dynamicVaultId)
-    ).to.be.revertedWith('T_SUCCEEDED');
+    await expect(beneficiary1.DynamicVaults.succeed(owner)).to.be.revertedWith(
+      'T_SUCCEEDED'
+    );
   });
 
   it('A successful succeed should increase the beneficiary funds accordingly to the inheritance percentage', async () => {
@@ -69,7 +69,7 @@ describe('DynamicVaults - succeed', function () {
       dynamicVaultOwner.FDAI?.approve(DynamicVaults.address, APPROVE_AMOUNT)
     ).to.emit(dynamicVaultOwner.FDAI, 'Approval');
     await expect(
-      dynamicVaultOwner.DynamicVaults.addToken(dynamicVaultId, FDAI.address)
+      dynamicVaultOwner.DynamicVaults.addToken(FDAI.address)
     ).to.emit(dynamicVaultOwner.DynamicVaults, 'TokenAdded');
 
     await ethers.provider.send('evm_increaseTime', [
@@ -77,7 +77,7 @@ describe('DynamicVaults - succeed', function () {
     ]);
     await ethers.provider.send('evm_mine', []);
 
-    await beneficiary1.DynamicVaults.succeed(dynamicVaultId);
+    await beneficiary1.DynamicVaults.succeed(owner);
 
     const finalBalance = await FDAI.balanceOf(beneficiary1.address);
 

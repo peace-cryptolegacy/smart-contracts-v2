@@ -6,7 +6,6 @@ import {Types} from '../../typechain/contracts/DynamicVaults';
 import {FDAI__factory} from '../../typechain/factories/contracts/mocks/FDAI__factory';
 
 export type TestamentCreationParams = [
-  dynamicVaultId: BigNumber,
   claimant: string,
   inactivityMaximum: BigNumber,
   Beneficiaries: Types.BeneficiaryStruct[]
