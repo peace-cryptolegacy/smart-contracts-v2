@@ -1,4 +1,3 @@
-import {BigNumber} from 'ethers';
 import {deployments} from 'hardhat';
 import {DynamicVaults} from '../../typechain/contracts/DynamicVaults';
 import {expect} from '../helpers/chai-setup';
@@ -13,32 +12,32 @@ const setup = deployments.createFixture(async () => {
 
 describe('DynamicVaults - createTestament', function () {
   let DynamicVaults: DynamicVaults;
-  let dynamicVaultId: BigNumber;
+  let owner: string;
   let beneficiary1: User;
-  const [
-    newDynamicVaultId,
-    newClaimant,
-    newInactivityMaximum,
-    newBeneficiaries,
-  ] = TESTAMENT_CREATION_PARAMS;
+  const [newClaimant, newInactivityMaximum, newBeneficiaries] =
+    TESTAMENT_CREATION_PARAMS;
   beforeEach(async () => {
     const {deployer, mocks, users} = await setup();
 
-    const {deployedDynamicVaults, usedDynamicVaultId, testBeneficiary1} =
+    const {deployedDynamicVaults, testDynamicVaultOwner, testBeneficiary1} =
       await setupTestContracts(deployer, mocks, users);
     DynamicVaults = deployedDynamicVaults;
-    dynamicVaultId = usedDynamicVaultId;
+    owner = testDynamicVaultOwner.address;
     beneficiary1 = testBeneficiary1;
   });
 
   it('Creating a testament where the claimer is the address zero should revert', async () => {
     await expect(
       DynamicVaults.createTestament(
-        newDynamicVaultId,
         newClaimant,
         newInactivityMaximum,
         newBeneficiaries
       )
     ).to.be.revertedWith('T_ADDRESS_ZERO');
+  });
+
+  it.only('test', async () => {
+    const vault = await DynamicVaults.dynamicVaults(owner);
+    console.log('🚀 ~ vault', vault);
   });
 });

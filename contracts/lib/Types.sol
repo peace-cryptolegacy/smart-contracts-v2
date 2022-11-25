@@ -26,7 +26,6 @@ library Types {
    */
   struct DynamicVault {
     Testament testament;
-    address owner;
     address[] backupAddresses;
     uint128 ESTABLISHMENT_FEE_RATE;
   }
