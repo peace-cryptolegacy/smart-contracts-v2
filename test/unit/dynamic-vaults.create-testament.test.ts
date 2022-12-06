@@ -35,9 +35,4 @@ describe('DynamicVaults - createTestament', function () {
       )
     ).to.be.revertedWith('T_ADDRESS_ZERO');
   });
-
-  it.only('test', async () => {
-    const vault = await DynamicVaults.dynamicVaults(owner);
-    console.log('🚀 ~ vault', vault);
-  });
 });
