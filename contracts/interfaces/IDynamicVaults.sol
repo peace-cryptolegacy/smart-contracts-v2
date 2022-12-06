@@ -20,6 +20,7 @@ interface IDynamicVaults {
   event accountRepossessed(address owner, address backupAddress);
   event BackupAdded(address owner, address backupAddress);
   event EstablishmentFeeRateUpdated(uint128 newEstablishmentFeeRate);
+  event BeneficiariesUpdated(address owner, Types.Beneficiary[] beneficiaries);
 
   /**
    * @notice Creates a dynamic vault
@@ -92,10 +93,15 @@ otherwise would be expensive and unnecessary
 
   /**
    * @notice Updates the inheritance percentage of a beneficiary
-   * @param beneficiaryAddress The address of the beneficiary
-   * @param newInheritancePercentage The new inheritance percentage
+   * @param names The names of the beneficiaries
+   * @param addresses The addresses of the beneficiary
+   * @param newInheritancePercentages The new inheritance percentages
    */
-  function updateBeneficiaryPercentage(address beneficiaryAddress, uint128 newInheritancePercentage) external;
+  function updateBeneficiaries(
+    string[] memory names,
+    address[] calldata addresses,
+    uint128[] calldata newInheritancePercentages
+  ) external;
 
   // Methods callable only by the owner of the contract
 
@@ -125,7 +131,9 @@ otherwise would be expensive and unnecessary
    * @return proofOfLife The last registred proof of life timestamp
    * @return succeeded Whether the dynamic vault has been succeeded
    */
-  function getTestamentParameters(address owner)
+  function getTestamentParameters(
+    address owner
+  )
     external
     view
     returns (

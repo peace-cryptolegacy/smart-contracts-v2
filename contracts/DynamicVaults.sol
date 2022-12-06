@@ -192,7 +192,9 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
    * @param owner The owner of the dynamic vault
    * @dev The function can only be called after the inactivity period is over
    */
-  function succeed(address owner)
+  function succeed(
+    address owner
+  )
     external
     onlyClaimant(dynamicVaults[owner])
     onlyOnTranscendence(dynamicVaults[owner])
@@ -286,19 +288,32 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
 
   /**
    * @notice Updates the inheritance percentage of a beneficiary
-   * @param address_ The address of the beneficiary
-   * @param newInheritancePercentage The new inheritance percentage
+   * @param names The names of the beneficiaries
+   * @param addresses The addresses of the beneficiary
+   * @param newInheritancePercentages The new inheritance percentages
    */
-  function updateBeneficiaryPercentage(address address_, uint128 newInheritancePercentage) external {
+  function updateBeneficiaries(
+    string[] memory names,
+    address[] calldata addresses,
+    uint128[] calldata newInheritancePercentages
+  ) external {
     Types.DynamicVault storage dynamicVault = dynamicVaults[msg.sender];
 
     for (uint256 i = 0; i < dynamicVault.testament.beneficiaries.length; i++) {
-      if (dynamicVault.testament.beneficiaries[i].address_ == address_) {
-        dynamicVault.testament.beneficiaries[i].inheritancePercentage = newInheritancePercentage;
+      for (uint256 j = 0; j < addresses.length; j++) {
+        if (keccak256(abi.encodePacked(names[j])) != keccak256("")) {
+          dynamicVault.testament.beneficiaries[j].name = names[j];
+        }
+        if (addresses[j] == address(0)) {
+          dynamicVault.testament.beneficiaries[j].address_ = payable(addresses[j]);
+        }
+        if (newInheritancePercentages[j] != 0) {
+          dynamicVault.testament.beneficiaries[j].inheritancePercentage = uint128(newInheritancePercentages[j]);
+        }
       }
     }
 
-    emit BeneficiaryPercentageUpdated(msg.sender, address_, newInheritancePercentage);
+    emit BeneficiariesUpdated(msg.sender, dynamicVault.testament.beneficiaries);
   }
 
   // Methods callable only by the owner of the contract
@@ -337,7 +352,9 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
    * @return proofOfLife The last registred proof of life timestamp
    * @return succeeded Whether the dynamic vault has been succeeded
    */
-  function getTestamentParameters(address owner)
+  function getTestamentParameters(
+    address owner
+  )
     external
     view
     returns (
