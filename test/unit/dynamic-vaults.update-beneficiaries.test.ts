@@ -1,4 +1,4 @@
-import {deployments} from 'hardhat';
+import {deployments, ethers} from 'hardhat';
 import {DynamicVaults} from '../../typechain/contracts/DynamicVaults';
 import {FDAI} from '../../typechain/contracts/mocks/FDAI';
 import {expect} from '../helpers/chai-setup';
@@ -44,14 +44,15 @@ describe('DynamicVaults - update beneficiaries', function () {
     FDAI.mint(dynamicVaultOwner.address, APPROVE_AMOUNT);
   });
 
-  it('Calling update beneficiaries with null values should not update the beneficiaries', async () => {
+  it('Calling update beneficiaries with the address zero should revert', async () => {
     await expect(
       dynamicVaultOwner.DynamicVaults.updateBeneficiaries(
         [''],
-        ['0x0000000000000000000000000000000000000000'],
+        [ethers.constants.AddressZero],
+        [0],
         [0]
       )
-    ).to.emit(dynamicVaultOwner.DynamicVaults, 'BeneficiariesUpdated');
+    ).to.be.revertedWith('T_ADDRESS_ZERO');
 
     const beneficiaries = (
       await DynamicVaults.dynamicVaults(dynamicVaultOwner.address)
@@ -65,7 +66,8 @@ describe('DynamicVaults - update beneficiaries', function () {
       dynamicVaultOwner.DynamicVaults.updateBeneficiaries(
         ['Jeremy'],
         [beneficiary1.address],
-        [100]
+        [100],
+        [0]
       )
     ).to.emit(dynamicVaultOwner.DynamicVaults, 'BeneficiariesUpdated');
 
@@ -74,5 +76,22 @@ describe('DynamicVaults - update beneficiaries', function () {
     ).testament.beneficiaries;
 
     expect(beneficiaries[0].name).to.equal('Jeremy');
+  });
+
+  it('Adding a new beneficiary should work', async () => {
+    await expect(
+      dynamicVaultOwner.DynamicVaults.updateBeneficiaries(
+        ['Jeremy'],
+        [beneficiary1.address],
+        [100],
+        [1]
+      )
+    ).to.emit(dynamicVaultOwner.DynamicVaults, 'BeneficiariesUpdated');
+
+    const beneficiaries = (
+      await DynamicVaults.dynamicVaults(dynamicVaultOwner.address)
+    ).testament.beneficiaries;
+
+    expect(beneficiaries[1].name).to.equal('Jeremy');
   });
 });
