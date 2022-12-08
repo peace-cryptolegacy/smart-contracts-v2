@@ -14,6 +14,7 @@ library Errors {
   error T_TESTAMENT_ALREADY_EXISTS(); // Dynamic vault already exists
   error T_BACKUP_ADDRESS_IS_OWNER(); // Backup address is owner
   error T_BACKUP_ADDRESS_ALREADY_EXISTS(); // Backup address already exists
+  error T_CANCELED(); // The testament is canceled
 
   //*** Library Specific Errors ***
 

@@ -21,6 +21,7 @@ interface IDynamicVaults {
   event BackupAdded(address owner, address backupAddress);
   event EstablishmentFeeRateUpdated(uint128 newEstablishmentFeeRate);
   event BeneficiariesUpdated(address owner, Types.Beneficiary[] beneficiaries);
+  event TestamentCanceled(address owner);
 
   /**
    * @notice Creates a dynamic vault
@@ -96,12 +97,19 @@ otherwise would be expensive and unnecessary
    * @param names The names of the beneficiaries
    * @param addresses The addresses of the beneficiary
    * @param newInheritancePercentages The new inheritance percentages
+   * @param indexes The indexes of the beneficiaries
    */
   function updateBeneficiaries(
     string[] memory names,
     address[] calldata addresses,
-    uint128[] calldata newInheritancePercentages
+    uint128[] calldata newInheritancePercentages,
+    uint128[] calldata indexes
   ) external;
+
+  /**
+   * @notice Cancels the testament
+   */
+  function cancelTestament() external;
 
   // Methods callable only by the owner of the contract
 

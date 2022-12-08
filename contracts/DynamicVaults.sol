@@ -45,6 +45,13 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     _;
   }
 
+  modifier onlyNotCanceled(Types.DynamicVault storage dynamicVault) {
+    if (dynamicVault.testament.canceled) {
+      revert Errors.T_CANCELED();
+    }
+    _;
+  }
+
   modifier onlyClaimant(Types.DynamicVault storage dynamicVault) {
     if (msg.sender != dynamicVault.testament.claimant) {
       revert Errors.T_UNAUTHORIZED();
@@ -86,7 +93,7 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     uint128 inactivityMaximum,
     Types.Beneficiary[] memory beneficiaries
   ) external {
-    if (dynamicVaults[msg.sender].testament.claimant != address(0)) {
+    if (!dynamicVaults[msg.sender].testament.canceled && dynamicVaults[msg.sender].testament.claimant != address(0)) {
       revert Errors.T_TESTAMENT_ALREADY_EXISTS();
     }
 
@@ -199,6 +206,7 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     onlyClaimant(dynamicVaults[owner])
     onlyOnTranscendence(dynamicVaults[owner])
     onlyUnsucceeded(dynamicVaults[owner])
+    onlyNotCanceled(dynamicVaults[owner])
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[owner];
 
@@ -291,29 +299,47 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
    * @param names The names of the beneficiaries
    * @param addresses The addresses of the beneficiary
    * @param newInheritancePercentages The new inheritance percentages
+   * @param indexes The indexes to modify
    */
   function updateBeneficiaries(
     string[] memory names,
     address[] calldata addresses,
-    uint128[] calldata newInheritancePercentages
+    uint128[] calldata newInheritancePercentages,
+    uint128[] calldata indexes
   ) external {
     Types.DynamicVault storage dynamicVault = dynamicVaults[msg.sender];
 
-    for (uint256 i = 0; i < dynamicVault.testament.beneficiaries.length; i++) {
-      for (uint256 j = 0; j < addresses.length; j++) {
-        if (keccak256(abi.encodePacked(names[j])) != keccak256("")) {
-          dynamicVault.testament.beneficiaries[j].name = names[j];
-        }
-        if (addresses[j] == address(0)) {
-          dynamicVault.testament.beneficiaries[j].address_ = payable(addresses[j]);
-        }
-        if (newInheritancePercentages[j] != 0) {
-          dynamicVault.testament.beneficiaries[j].inheritancePercentage = uint128(newInheritancePercentages[j]);
-        }
+    for (uint256 j = 0; j < addresses.length; j++) {
+      if (addresses[j] == address(0)) {
+        revert Errors.T_ADDRESS_ZERO();
+      }
+      if (dynamicVault.testament.beneficiaries.length - 1 < indexes[j]) {
+        dynamicVault.testament.beneficiaries.push(
+          Types.Beneficiary({
+            name: names[j],
+            address_: payable(addresses[j]),
+            inheritancePercentage: newInheritancePercentages[j]
+          })
+        );
+      } else {
+        dynamicVault.testament.beneficiaries[j].name = names[j];
+        dynamicVault.testament.beneficiaries[j].address_ = payable(addresses[j]);
+        dynamicVault.testament.beneficiaries[j].inheritancePercentage = uint128(newInheritancePercentages[j]);
       }
     }
 
     emit BeneficiariesUpdated(msg.sender, dynamicVault.testament.beneficiaries);
+  }
+
+  /**
+   * @notice Cancels the testament
+   */
+  function cancelTestament() external {
+    Types.DynamicVault storage dynamicVault = dynamicVaults[msg.sender];
+
+    dynamicVault.testament.succeeded = false;
+
+    emit TestamentCanceled(msg.sender);
   }
 
   // Methods callable only by the owner of the contract

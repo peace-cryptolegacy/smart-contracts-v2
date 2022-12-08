@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library Types {
+  struct NewBeneficiary {
+    mapping(address => Beneficiary) NewBeneficiary;
+  }
+
   struct Beneficiary {
     string name;
     address payable address_;
@@ -17,6 +21,7 @@ library Types {
     bool succeeded;
     Beneficiary[] beneficiaries;
     address[] tokens;
+    bool canceled;
   }
 
   /*
