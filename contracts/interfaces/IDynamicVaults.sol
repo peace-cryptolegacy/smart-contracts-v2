@@ -28,11 +28,7 @@ interface IDynamicVaults {
    * @param inactivityMaximum The maximum inactivity time
    * @param beneficiaries The beneficiaries that will inherit the vault
    */
-  function createTestament(
-    address claimant,
-    uint128 inactivityMaximum,
-    Types.Beneficiary[] memory beneficiaries
-  ) external;
+  function createTestament(uint128 inactivityMaximum, Types.Beneficiary[] memory beneficiaries) external;
 
   /**
   * @notice Adds a token to the testament
@@ -133,7 +129,6 @@ otherwise would be expensive and unnecessary
   /**
    * @notice Returns the testament parameters of a given dynamic vault id
    * @param owner The owner of the dynamic vault
-   * @return claimant The claimant of the dynamic vault
    * @return tokens The approved tokens
    * @return inactivityMaximum The maximum inactivity time
    * @return proofOfLife The last registred proof of life timestamp
@@ -145,7 +140,6 @@ otherwise would be expensive and unnecessary
     external
     view
     returns (
-      address claimant,
       address[] memory tokens,
       uint128 inactivityMaximum,
       uint128 proofOfLife,

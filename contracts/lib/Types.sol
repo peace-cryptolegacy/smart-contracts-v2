@@ -14,14 +14,18 @@ library Types {
     uint128 inheritancePercentage;
   }
 
+  enum TestamentStatus {
+    CANCELED,
+    ACTIVE
+  }
+
   struct Testament {
-    address claimant;
     uint128 inactivityMaximum;
     uint128 proofOfLife;
     bool succeeded;
     Beneficiary[] beneficiaries;
     address[] tokens;
-    bool canceled;
+    TestamentStatus status;
   }
 
   /*
