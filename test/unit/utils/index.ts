@@ -60,7 +60,6 @@ export const setupTestContracts = async (
   await mocks.TestToken.mock.transferFrom.returns(true);
 
   await testDynamicVaultOwner.DynamicVaults.createTestament(
-    testBeneficiary1.address,
     INACTIVITY_MAXIMUM,
     [
       {

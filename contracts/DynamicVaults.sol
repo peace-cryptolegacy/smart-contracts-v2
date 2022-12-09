@@ -45,16 +45,24 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     _;
   }
 
-  modifier onlyNotCanceled(Types.DynamicVault storage dynamicVault) {
-    if (dynamicVault.testament.canceled) {
-      revert Errors.T_CANCELED();
+  modifier onlyBeneficiary(Types.DynamicVault storage dynamicVault) {
+    bool authorized;
+    for (uint256 i = 0; i < dynamicVault.testament.beneficiaries.length; i++) {
+      if (dynamicVault.testament.beneficiaries[i].address_ == msg.sender) {
+        authorized = true;
+        break;
+      }
+    }
+
+    if (!authorized) {
+      revert Errors.T_UNAUTHORIZED();
     }
     _;
   }
 
-  modifier onlyClaimant(Types.DynamicVault storage dynamicVault) {
-    if (msg.sender != dynamicVault.testament.claimant) {
-      revert Errors.T_UNAUTHORIZED();
+  modifier onlyActive(Types.DynamicVault storage dynamicVault) {
+    if (dynamicVault.testament.status != Types.TestamentStatus.ACTIVE) {
+      revert Errors.T_CANCELED();
     }
     _;
   }
@@ -88,22 +96,15 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
    * @dev The beneficiaries percentages should be with an 18 decimals precision to allow for percentages with decimals
    * @dev The beneficiaries percentages should add up to 100%
    */
-  function createTestament(
-    address claimant,
-    uint128 inactivityMaximum,
-    Types.Beneficiary[] memory beneficiaries
-  ) external {
-    if (!dynamicVaults[msg.sender].testament.canceled && dynamicVaults[msg.sender].testament.claimant != address(0)) {
+  function createTestament(uint128 inactivityMaximum, Types.Beneficiary[] memory beneficiaries) external {
+    if (dynamicVaults[msg.sender].testament.status == Types.TestamentStatus.ACTIVE) {
       revert Errors.T_TESTAMENT_ALREADY_EXISTS();
-    }
-
-    if (claimant == address(0)) {
-      revert Errors.T_ADDRESS_ZERO();
     }
 
     Types.DynamicVault storage dynamicVault = dynamicVaults[msg.sender];
 
-    dynamicVault.testament.claimant = claimant;
+    dynamicVault.testament.status = Types.TestamentStatus.ACTIVE;
+
     dynamicVault.testament.inactivityMaximum = inactivityMaximum;
     dynamicVault.testament.proofOfLife = uint128(block.timestamp);
 
@@ -203,10 +204,10 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     address owner
   )
     external
-    onlyClaimant(dynamicVaults[owner])
+    onlyBeneficiary(dynamicVaults[owner])
     onlyOnTranscendence(dynamicVaults[owner])
     onlyUnsucceeded(dynamicVaults[owner])
-    onlyNotCanceled(dynamicVaults[owner])
+    onlyActive(dynamicVaults[owner])
   {
     Types.DynamicVault storage dynamicVault = dynamicVaults[owner];
 
@@ -337,7 +338,7 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
   function cancelTestament() external {
     Types.DynamicVault storage dynamicVault = dynamicVaults[msg.sender];
 
-    dynamicVault.testament.succeeded = false;
+    dynamicVault.testament.status = Types.TestamentStatus.CANCELED;
 
     emit TestamentCanceled(msg.sender);
   }
@@ -372,7 +373,6 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
   /**
    * @notice Returns the testament parameters of a given dynamic vault id
    * @param owner The owner of the dynamic vault
-   * @return claimant The claimant of the dynamic vault
    * @return tokens The approved tokens
    * @return inactivityMaximum The maximum inactivity time
    * @return proofOfLife The last registred proof of life timestamp
@@ -384,7 +384,6 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     external
     view
     returns (
-      address claimant,
       address[] memory tokens,
       uint128 inactivityMaximum,
       uint128 proofOfLife,
@@ -407,7 +406,6 @@ contract DynamicVaults is IDynamicVaults, OwnableUpgradeable, PausableUpgradeabl
     }
 
     return (
-      dynamicVault.testament.claimant,
       dynamicVault.testament.tokens,
       dynamicVault.testament.inactivityMaximum,
       dynamicVault.testament.proofOfLife,

@@ -12,8 +12,7 @@ const setup = deployments.createFixture(async () => {
 
 describe('DynamicVaults - createTestament', function () {
   let DynamicVaults: DynamicVaults;
-  let owner: string;
-  let beneficiary1: User;
+  let dynamicVaultOwner: User, beneficiary1: User;
   const [newClaimant, newInactivityMaximum, newBeneficiaries] =
     TESTAMENT_CREATION_PARAMS;
   beforeEach(async () => {
@@ -22,17 +21,16 @@ describe('DynamicVaults - createTestament', function () {
     const {deployedDynamicVaults, testDynamicVaultOwner, testBeneficiary1} =
       await setupTestContracts(deployer, mocks, users);
     DynamicVaults = deployedDynamicVaults;
-    owner = testDynamicVaultOwner.address;
+    dynamicVaultOwner = testDynamicVaultOwner;
     beneficiary1 = testBeneficiary1;
   });
 
-  it('Creating a testament where the claimer is the address zero should revert', async () => {
+  it('Creating 2 testaments for the same address should revert', async () => {
     await expect(
-      DynamicVaults.createTestament(
-        newClaimant,
+      dynamicVaultOwner.DynamicVaults.createTestament(
         newInactivityMaximum,
         newBeneficiaries
       )
-    ).to.be.revertedWith('T_ADDRESS_ZERO');
+    ).to.be.revertedWith('T_TESTAMENT_ALREADY_EXISTS');
   });
 });
